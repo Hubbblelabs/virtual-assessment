@@ -97,10 +97,10 @@ export default function DashboardLayout({
     const pageTitle = getPageTitle();
 
     return (
-        <SidebarProvider defaultOpen={true}>
+        <SidebarProvider defaultOpen={true} className="h-svh overflow-hidden">
             <AppSidebar />
-            <SidebarInset className="overflow-hidden">
-                <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background md:rounded-t-xl">
+            <SidebarInset className="overflow-hidden flex flex-col">
+                <header className="flex h-16 w-full shrink-0 items-center gap-2 border-b px-4 bg-background md:rounded-t-xl z-10 transition-all">
                     <SidebarTrigger className="-ml-1" />
                     <Separator orientation="vertical" className="mr-2 h-4" />
                     <h1 className="text-lg font-semibold">{pageTitle}</h1>
