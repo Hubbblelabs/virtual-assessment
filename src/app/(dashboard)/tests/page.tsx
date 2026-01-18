@@ -267,18 +267,6 @@ export default function TestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Tests</h1>
-        {isTeacher && (
-          <Link href="/tests/create">
-            <Button className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Test
-            </Button>
-          </Link>
-        )}
-      </div>
-
       <div className="bg-card p-4 rounded-lg shadow space-y-4 md:space-y-0 md:flex md:items-center md:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -338,6 +326,15 @@ export default function TestsPage() {
           >
             <ArrowUpDown className={`h-4 w-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
           </Button>
+
+          {isTeacher && (
+            <Link href="/tests/create">
+              <Button className="w-full sm:w-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Test
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 

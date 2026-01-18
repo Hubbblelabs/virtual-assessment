@@ -54,12 +54,6 @@ const ProfilePage = () => {
 
     return (
         <div className="container mx-auto p-6 max-w-4xl space-y-8">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-                    <p className="text-muted-foreground">Manage your account settings and preferences.</p>
-                </div>
-            </div>
 
             <div className="grid gap-6 md:grid-cols-3">
                 {/* User Info Card */}

@@ -395,7 +395,7 @@ export default function CreateTestPage() {
   const fetchGroups = async () => {
     try {
       const response = await api.get('/groups');
-      setGroups(response.data);
+      setGroups(response.data.groups || []);
     } catch (error) {
       console.error('Failed to fetch groups:', error);
     }
@@ -903,10 +903,7 @@ export default function CreateTestPage() {
   return (
     <div className="w-full pb-10">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            {isEditMode ? 'Edit Test' : 'Create Test'}
-          </h1>
+        <div className="flex items-center justify-end">
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.push('/tests')}>Cancel</Button>
             {!isEditMode && (

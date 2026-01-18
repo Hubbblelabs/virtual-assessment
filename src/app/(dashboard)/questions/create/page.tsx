@@ -420,15 +420,7 @@ export default function CreateQuestionPage() {
 
   return (
     <div className="container mx-auto py-6 max-w-7xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {isEditMode ? 'Edit Question' : 'Create Question'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {selectedSubject ? `Adding to ${selectedSubject.name}` : 'Fill in the details below'}
-          </p>
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <Button
           variant="outline"
           onClick={() => subjectId ? router.push(`/questions/subject/${subjectId}`) : router.push('/questions')}

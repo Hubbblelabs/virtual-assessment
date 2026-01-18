@@ -117,7 +117,7 @@ export default function StudentGroupsPage() {
     try {
       setLoading(true);
       const response = await api.get('/groups');
-      setGroups(response.data);
+      setGroups(response.data.groups || []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch groups');
     } finally {
@@ -300,12 +300,15 @@ export default function StudentGroupsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Student Groups</h1>
-          <p className="text-muted-foreground mt-1">
-            {isAdmin ? 'Organize students into groups for easier management' : 'View groups assigned to you'}
-          </p>
+      {/* Search Bar */}
+      <div className="bg-card p-4 rounded-lg shadow-sm border flex gap-4 items-center">
+        <div className="flex-1">
+          <Input
+            placeholder="Search groups..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
         </div>
         {isAdmin && (
           <Button onClick={() => handleOpenSheet()} className="gap-2">
@@ -313,16 +316,6 @@ export default function StudentGroupsPage() {
             Create Group
           </Button>
         )}
-      </div>
-
-      {/* Search Bar */}
-      <div className="bg-card p-4 rounded-lg shadow-sm border">
-        <Input
-          placeholder="Search groups..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full"
-        />
       </div>
 
       {/* Groups Grid - Card View */}

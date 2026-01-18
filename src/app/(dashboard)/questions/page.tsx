@@ -73,13 +73,6 @@ export default function QuestionsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Question Bank</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">Browse questions by subject</p>
-        </div>
-      </div>
 
       {/* Search Bar */}
       <div className="bg-card p-3 sm:p-4 rounded-lg shadow-sm border">

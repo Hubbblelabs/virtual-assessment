@@ -270,19 +270,8 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Users Management</h1>
-          <p className="text-muted-foreground mt-1">Manage system users and their roles</p>
-        </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Add New User
-        </Button>
-      </div>
-
       {/* Filters */}
-      <div className="bg-card p-4 rounded-lg shadow-sm border flex gap-4">
+      <div className="bg-card p-4 rounded-lg shadow-sm border flex gap-4 items-center">
         <div className="flex-1">
           <Input
             placeholder="Search by name or email..."
@@ -307,6 +296,10 @@ export default function UsersPage() {
             </SelectContent>
           </Select>
         </div>
+        <Button onClick={() => handleOpenDialog()} className="gap-2">
+          <UserPlus className="h-4 w-4" />
+          Add New User
+        </Button>
       </div>
 
       {/* Stats Cards */}

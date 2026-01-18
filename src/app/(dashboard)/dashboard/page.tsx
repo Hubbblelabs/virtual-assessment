@@ -69,12 +69,7 @@ export default function DashboardPage() {
     if (user?.role === 'admin') {
         return (
             <div className="space-y-8 p-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-                        <p className="text-muted-foreground">Welcome back, {user?.name}. Platform overview.</p>
-                    </div>
-                </div>
+
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card>
@@ -213,12 +208,7 @@ export default function DashboardPage() {
     if (user?.role === 'teacher') {
         return (
             <div className="space-y-8 p-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h1>
-                        <p className="text-muted-foreground">Welcome back, {user?.name}. Manage your courses and assessments.</p>
-                    </div>
-                </div>
+
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card>
@@ -319,11 +309,7 @@ export default function DashboardPage() {
     // Student Dashboard (default)
     return (
         <div className="space-y-8 p-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-                    <p className="text-muted-foreground">Welcome back, {user?.name}. Here&apos;s what&apos;s happening with your courses.</p>
-                </div>
+            <div className="flex items-center justify-end">
                 <Button asChild>
                     <Link href="/tests">View All Tests</Link>
                 </Button>

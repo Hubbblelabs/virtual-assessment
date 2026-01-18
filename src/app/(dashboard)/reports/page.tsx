@@ -67,15 +67,7 @@ const ReportsPage = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics & Reports</h1>
-          <p className="text-muted-foreground">
-            {user?.role === 'student'
-              ? 'Track your academic progress and performance analysis.'
-              : 'Analyze student performance and test statistics.'}
-          </p>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <div className="flex items-center gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[180px]">

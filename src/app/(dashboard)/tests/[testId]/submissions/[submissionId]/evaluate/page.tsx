@@ -141,13 +141,7 @@ export default function EvaluatePage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Evaluate Submission</h1>
-                    <p className="text-muted-foreground">
-                        {submission.student?.name} - {submission.test?.title}
-                    </p>
-                </div>
+            <div className="flex items-center justify-end">
                 <div className="flex items-center gap-4">
                     <div className="text-right">
                         <p className="text-sm text-muted-foreground">Total Score</p>

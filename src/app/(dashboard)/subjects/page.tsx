@@ -338,25 +338,20 @@ export default function SubjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Subjects, Chapters & Topics</h1>
-          <p className="text-muted-foreground mt-1">Manage subjects, chapters, and their topics</p>
+      {/* Search Bar */}
+      <div className="bg-card p-4 rounded-lg shadow-sm border flex gap-4 items-center">
+        <div className="flex-1">
+          <Input
+            placeholder="Search subjects..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
         </div>
         <Button onClick={() => handleOpenSheet()} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Subject
         </Button>
-      </div>
-
-      {/* Search Bar */}
-      <div className="bg-card p-4 rounded-lg shadow-sm border">
-        <Input
-          placeholder="Search subjects..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full"
-        />
       </div>
 
       {/* Subjects Grid */}

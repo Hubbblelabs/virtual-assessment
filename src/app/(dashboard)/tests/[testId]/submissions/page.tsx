@@ -93,11 +93,7 @@ export default function SubmissionsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">{test?.title} - Submissions</h1>
-                    <p className="text-muted-foreground">View and evaluate student submissions</p>
-                </div>
+            <div className="flex items-center justify-end">
                 <Button variant="outline" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
