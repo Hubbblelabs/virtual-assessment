@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Clock, Users, FileText, Trash2, Eye, EyeOff, Edit, ClipboardList, PlayCircle, CheckCircle, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Plus, Calendar, Clock, Users, FileText, Trash2, Eye, EyeOff, Edit, ClipboardList, PlayCircle, CheckCircle, Search, Filter, ArrowUpDown, RotateCcw, Trophy, Hash } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CardGridSkeleton } from "@/components/skeletons";
 
 import { toast } from 'sonner';
 
@@ -39,11 +40,17 @@ interface Test {
   totalMarks: number;
   questions: any[];
   assignedTo: any[];
+  assignedGroups?: {
+    _id: string;
+    name: string;
+    students: string[];
+  }[];
   scheduledDate?: string;
   deadline?: string;
   isPublished: boolean;
   showResultsImmediately?: boolean;
   resultsPublished?: boolean;
+  attempts: number; // Max allowed attempts
   createdAt: string;
 }
 
@@ -53,6 +60,8 @@ interface Submission {
   student: string;
   status: 'submitted' | 'evaluated' | 'pending';
   totalMarksObtained?: number;
+  attemptNumber: number;
+  submittedAt: string;
 }
 
 export default function TestsPage() {
@@ -62,9 +71,6 @@ export default function TestsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [testToDelete, setTestToDelete] = useState<string | null>(null);
-  const [cascadeDeleteId, setCascadeDeleteId] = useState<string | null>(null);
-
-  const [cascadeDeleteDialogOpen, setCascadeDeleteDialogOpen] = useState(false);
 
   // Search, Filter, Sort State
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,8 +125,15 @@ export default function TestsPage() {
     }
   };
 
-  const getSubmissionForTest = (testId: string) => {
-    return submissions.find(sub => sub.test === testId || (sub.test as any)?._id === testId);
+  const getSubmissionsForTest = (testId: string): Submission[] => {
+    return submissions
+      .filter(sub => sub.test === testId || (sub.test as any)?._id === testId)
+      .sort((a, b) => a.attemptNumber - b.attemptNumber);
+  };
+
+  const getLatestSubmission = (testId: string): Submission | undefined => {
+    const testSubmissions = getSubmissionsForTest(testId);
+    return testSubmissions.length > 0 ? testSubmissions[testSubmissions.length - 1] : undefined;
   };
 
   const handleDeleteClick = (id: string) => {
@@ -132,46 +145,24 @@ export default function TestsPage() {
     if (!testToDelete) return;
 
     try {
-      await api.delete(`/tests/${testToDelete}`);
-      toast.success('Test deleted successfully');
+      const response = await api.delete(`/tests/${testToDelete}`);
+      toast.success(response.data?.message || 'Test deleted successfully');
       fetchTests();
       setDeleteDialogOpen(false);
       setTestToDelete(null);
     } catch (error: any) {
-      if (error.response?.status === 409 && error.response?.data?.canCascade) {
-        // Close the normal delete dialog and open the cascade confirmation
-        setDeleteDialogOpen(false);
-        setCascadeDeleteId(testToDelete);
-        setTestToDelete(null);
-        setCascadeDeleteDialogOpen(true);
-      } else {
-        console.error('Failed to delete test:', error);
-        toast.error(error.response?.data?.message || 'Failed to delete test');
-        setDeleteDialogOpen(false);
-        setTestToDelete(null);
-      }
-    }
-  };
-
-  const handleForceDelete = async () => {
-    if (!cascadeDeleteId) return;
-
-    try {
-      await api.delete(`/tests/${cascadeDeleteId}?force=true`);
-      toast.success('Test and all submissions deleted successfully');
-      fetchTests();
-    } catch (error: any) {
-      console.error('Failed to force delete test:', error);
+      console.error('Failed to delete test:', error);
       toast.error(error.response?.data?.message || 'Failed to delete test');
-    } finally {
-      setCascadeDeleteDialogOpen(false);
-      setCascadeDeleteId(null);
+      setDeleteDialogOpen(false);
+      setTestToDelete(null);
     }
   };
+
+
 
   const handlePublish = async (id: string) => {
     try {
-      await api.patch(`/tests/${id}/publish`);
+      await api.put(`/tests/${id}/publish`);
       toast.success('Test published successfully');
       fetchTests();
     } catch (error) {
@@ -339,9 +330,7 @@ export default function TestsPage() {
       </div>
 
       {loading ? (
-        <div className="bg-card p-6 rounded-lg shadow text-center">
-          <p className="text-muted-foreground">Loading tests...</p>
-        </div>
+        <CardGridSkeleton count={6} />
       ) : tests.length === 0 ? (
         <div className="bg-card p-8 sm:p-12 rounded-lg shadow text-center">
           <FileText className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground mb-4" />
@@ -407,7 +396,15 @@ export default function TestsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                  <span>Assigned to {test.assignedTo.length} students</span>
+                  <span>
+                    {test.assignedGroups && test.assignedGroups.length > 0 ? (
+                      `Assigned to ${test.assignedGroups.length} group${test.assignedGroups.length !== 1 ? 's' : ''}`
+                    ) : test.assignedTo.length > 0 ? (
+                      `Assigned to ${test.assignedTo.length} student${test.assignedTo.length !== 1 ? 's' : ''}`
+                    ) : (
+                      'Not assigned'
+                    )}
+                  </span>
                 </div>
                 {test.scheduledDate && (
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
@@ -419,59 +416,142 @@ export default function TestsPage() {
 
               <div className="flex flex-col gap-2">
                 {isStudent ? (
-                  // Student view - show Start Test button or View Results
+                  // Student view - show detailed test and attempt info
                   (() => {
-                    const submission = getSubmissionForTest(test._id);
+                    const allSubmissions = getSubmissionsForTest(test._id);
+                    const latestSubmission = getLatestSubmission(test._id);
+                    const attemptsMade = allSubmissions.length;
+                    const maxAttempts = test.attempts || 1;
+                    const remainingAttempts = maxAttempts - attemptsMade;
+                    const canViewResults = test.showResultsImmediately || test.resultsPublished;
 
-                    if (submission) {
-                      // Student has already submitted - check if results are available
-                      const canViewResults = test.showResultsImmediately || test.resultsPublished;
+                    // Check for pending (in-progress) submission
+                    const pendingSubmission = allSubmissions.find(s => s.status === 'pending');
 
-                      if (canViewResults) {
-                        return (
-                          <div className="flex flex-col gap-2">
-                            <Link href={`/tests/submissions/evaluate/${submission._id}`} className="w-full">
-                              <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm">
-                                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                                View Results
-                              </Button>
-                            </Link>
-                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                              <span className="px-2 py-1 bg-muted/50 rounded text-center">
-                                {submission.status === 'evaluated'
-                                  ? `Evaluated - ${submission.totalMarksObtained || 0}/${test.totalMarks}`
-                                  : 'Pending Evaluation'}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        // Results not yet published by teacher
-                        return (
-                          <div className="flex flex-col gap-2">
-                            <Button size="sm" className="w-full cursor-not-allowed text-xs sm:text-sm" disabled variant="secondary">
-                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                              Results Pending
-                            </Button>
-                            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                              <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded text-center">
-                                Submitted - Awaiting Result Publication
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      }
-                    }
-
-                    // Student hasn't submitted yet - show Start Test button
                     return (
-                      <div className="flex gap-2">
-                        <Link href={`/tests/take/${test._id}`} className="flex-1">
-                          <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm">
-                            <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                            Start Test
+                      <div className="flex flex-col gap-3 mt-2 pt-3 border-t border-border/50">
+                        {/* Attempt Statistics */}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-muted/30 rounded-lg p-2 text-center">
+                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                              <RotateCcw className="h-3 w-3" />
+                              <span>Attempts</span>
+                            </div>
+                            <div className="text-sm font-semibold">
+                              {attemptsMade}/{maxAttempts}
+                            </div>
+                          </div>
+                          <div className="bg-muted/30 rounded-lg p-2 text-center">
+                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                              <Hash className="h-3 w-3" />
+                              <span>Remaining</span>
+                            </div>
+                            <div className={`text-sm font-semibold ${remainingAttempts > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {remainingAttempts}
+                            </div>
+                          </div>
+                          <div className="bg-muted/30 rounded-lg p-2 text-center">
+                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                              <Trophy className="h-3 w-3" />
+                              <span>Best Score</span>
+                            </div>
+                            <div className="text-sm font-semibold">
+                              {canViewResults && attemptsMade > 0 ? (
+                                (() => {
+                                  const evaluatedSubmissions = allSubmissions.filter(s => s.status === 'evaluated');
+                                  if (evaluatedSubmissions.length === 0) return '-';
+                                  const bestScore = Math.max(...evaluatedSubmissions.map(s => s.totalMarksObtained || 0));
+                                  return `${bestScore}/${test.totalMarks}`;
+                                })()
+                              ) : (
+                                '-'
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Attempt History */}
+                        {attemptsMade > 0 && (
+                          <div className="space-y-2">
+                            <div className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              Attempt History
+                            </div>
+                            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                              {allSubmissions.map((submission) => (
+                                <div
+                                  key={submission._id}
+                                  className="flex items-center justify-between bg-muted/20 rounded-md px-2 py-1.5 text-xs"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">Attempt {submission.attemptNumber}</span>
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${submission.status === 'evaluated'
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                        : submission.status === 'submitted'
+                                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                                          : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                      }`}>
+                                      {submission.status === 'pending' ? 'In Progress' : submission.status}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {canViewResults && submission.status === 'evaluated' ? (
+                                      <>
+                                        <span className="font-semibold text-primary">
+                                          {submission.totalMarksObtained || 0}/{test.totalMarks}
+                                        </span>
+                                        <Link href={`/tests/submissions/evaluate/${submission._id}`}>
+                                          <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]">
+                                            <Eye className="h-3 w-3 mr-1" />
+                                            View
+                                          </Button>
+                                        </Link>
+                                      </>
+                                    ) : submission.status === 'pending' ? (
+                                      <Link href={`/tests/${test._id}/take`}>
+                                        <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-amber-600">
+                                          <PlayCircle className="h-3 w-3 mr-1" />
+                                          Continue
+                                        </Button>
+                                      </Link>
+                                    ) : (
+                                      <span className="text-muted-foreground">Awaiting results</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {pendingSubmission ? (
+                          <Link href={`/tests/${test._id}/take`} className="w-full">
+                            <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700 text-xs sm:text-sm">
+                              <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                              Continue Test (Attempt {pendingSubmission.attemptNumber})
+                            </Button>
+                          </Link>
+                        ) : remainingAttempts > 0 ? (
+                          <Link href={`/tests/${test._id}/take`} className="w-full">
+                            <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm">
+                              <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                              {attemptsMade > 0 ? `Start Attempt ${attemptsMade + 1}` : 'Start Test'}
+                            </Button>
+                          </Link>
+                        ) : latestSubmission && canViewResults ? (
+                          <Link href={`/tests/submissions/evaluate/${latestSubmission._id}`} className="w-full">
+                            <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm">
+                              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                              View Latest Result
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button size="sm" className="w-full" disabled variant="secondary">
+                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                            {attemptsMade >= maxAttempts ? 'No Attempts Remaining' : 'Results Pending'}
                           </Button>
-                        </Link>
+                        )}
                       </div>
                     );
                   })()
@@ -503,7 +583,7 @@ export default function TestsPage() {
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Link href={`/tests/submissions?testId=${test._id}`}>
+                          <Link href={`/tests/${test._id}/submissions`}>
                             <Button size="icon" variant="ghost" className="h-8 w-8 text-purple-600 hover:text-purple-700 hover:bg-purple-50">
                               <ClipboardList className="h-4 w-4" />
                             </Button>
@@ -571,7 +651,7 @@ export default function TestsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Test</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this test? This action cannot be undone.
+              Are you sure you want to delete this test? All associated submissions will also be permanently deleted. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -583,24 +663,7 @@ export default function TestsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={cascadeDeleteDialogOpen} onOpenChange={setCascadeDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Test with Submissions</AlertDialogTitle>
-            <AlertDialogDescription>
-              This test has existing submissions. Deleting it will also permanently delete all student submissions and results.
-              <br /><br />
-              <strong>Are you absolutely sure you want to proceed?</strong>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleForceDelete} className="bg-red-600 hover:bg-red-700">
-              Delete Everything
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
 
       {/* Generic Confirmation Dialog */}
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>

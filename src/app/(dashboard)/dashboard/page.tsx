@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DashboardSkeleton } from "@/components/skeletons";
 import {
     BookOpen,
     FileText,
@@ -58,11 +59,7 @@ export default function DashboardPage() {
     };
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[50vh]">
-                <div className="animate-pulse">Loading dashboard...</div>
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     // Admin Dashboard

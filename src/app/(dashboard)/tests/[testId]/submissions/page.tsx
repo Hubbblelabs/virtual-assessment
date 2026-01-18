@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
+import { TableSkeleton } from "@/components/skeletons";
 import { Eye, CheckCircle, Clock, AlertCircle, ArrowLeft } from 'lucide-react';
 
 interface Submission {
@@ -85,8 +86,13 @@ export default function SubmissionsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="animate-pulse">Loading submissions...</div>
+            <div className="space-y-6">
+                <div className="flex items-center justify-end h-10">
+                    <div className="h-10 w-20 rounded-md bg-muted animate-pulse" />
+                </div>
+                <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
+                    <TableSkeleton rows={8} columns={5} />
+                </div>
             </div>
         );
     }

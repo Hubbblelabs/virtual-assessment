@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from 'sonner';
 import { useBreadcrumb } from '@/contexts/BreadcrumbContext';
 
@@ -39,8 +45,10 @@ interface Attachment {
 export default function CreateQuestionPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string | undefined;
-  const subjectId = params.subjectId as string | undefined;
+  // Get subjectId from query params (e.g., /questions/create?subject=xxx)
+  const subjectId = searchParams.get('subject') || undefined;
   const isEditMode = !!id;
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -68,6 +76,12 @@ export default function CreateQuestionPage() {
   });
   const [tagsList, setTagsList] = useState<string[]>([]);
   const [options, setOptions] = useState<string[]>(['', '', '', '']); // For MCQ and True/False
+
+  // Image Preview State
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Common tags for quick selection
 
   // Common tags for quick selection
   const commonTags = [
@@ -371,6 +385,11 @@ export default function CreateQuestionPage() {
   };
 
 
+  const openImagePreview = (url: string) => {
+    setPreviewImage(url);
+    setIsPreviewOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -628,17 +647,7 @@ export default function CreateQuestionPage() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label htmlFor="questionText">Question Text *</Label>
-                      {attachments.length > 0 && formData.attachmentPosition === 'custom' && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowAttachmentHelper(!showAttachmentHelper)}
-                          className="text-xs h-6"
-                        >
-                          {showAttachmentHelper ? 'Hide' : 'Show'} Helper
-                        </Button>
-                      )}
+
                     </div>
                     <textarea
                       id="questionText"
@@ -702,17 +711,7 @@ export default function CreateQuestionPage() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label htmlFor="correctAnswer">Correct Answer *</Label>
-                      {correctAnswerAttachments.length > 0 && formData.correctAnswerAttachmentPosition === 'custom' && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowAnswerAttachmentHelper(!showAnswerAttachmentHelper)}
-                          className="text-xs h-6"
-                        >
-                          {showAnswerAttachmentHelper ? 'Hide' : 'Show'} Helper
-                        </Button>
-                      )}
+
                     </div>
                     {formData.questionType === 'multiple-choice' ? (
                       <Select
@@ -826,14 +825,14 @@ export default function CreateQuestionPage() {
                   {/* File List */}
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {attachments.map((attachment, index) => {
-                      const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL
-                        ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '')
-                        : 'http://localhost:5000';
-                      const fileUrl = `${backendBaseUrl}${attachment.fileUrl}`;
+                      const fileUrl = attachment.fileUrl; // Files are served from public folder, so relative path works
 
                       return (
                         <div key={index} className="flex items-center gap-2 p-2 border rounded bg-muted/20">
-                          <div className="h-10 w-10 bg-muted flex items-center justify-center rounded overflow-hidden shrink-0">
+                          <div
+                            className="h-10 w-10 bg-muted flex items-center justify-center rounded overflow-hidden shrink-0 cursor-pointer hover:opacity-80"
+                            onClick={() => attachment.fileType.startsWith('image/') && openImagePreview(fileUrl)}
+                          >
                             {attachment.fileType.startsWith('image/') ? (
                               <img src={fileUrl} alt="" className="h-full w-full object-cover" />
                             ) : (
@@ -844,6 +843,18 @@ export default function CreateQuestionPage() {
                             <p className="text-xs font-medium truncate" title={attachment.fileName}>{attachment.fileName}</p>
                             <p className="text-[10px] text-muted-foreground">{formatFileSize(attachment.fileSize)}</p>
                           </div>
+                          {formData.attachmentPosition === 'custom' && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              title="Insert placeholder into text"
+                              onClick={() => insertAttachmentPlaceholder(index)}
+                              className="h-6 text-[10px] px-2 h-6"
+                            >
+                              Insert
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             variant="ghost"
@@ -859,23 +870,7 @@ export default function CreateQuestionPage() {
                   </div>
 
                   {/* Attachment Helper (Conditional) */}
-                  {showAttachmentHelper && attachments.length > 0 && formData.attachmentPosition === 'custom' && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-xs border border-blue-100 dark:border-blue-800">
-                      <p className="font-medium mb-2">Click to insert:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {attachments.map((_, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => insertAttachmentPlaceholder(index)}
-                            className="bg-background border px-2 py-1 rounded hover:bg-muted transition"
-                          >
-                            {`{{attachment:${index}}}`}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+
                 </CardContent>
               </Card>
 
@@ -920,14 +915,14 @@ export default function CreateQuestionPage() {
 
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {correctAnswerAttachments.map((attachment, index) => {
-                        const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL
-                          ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '')
-                          : 'http://localhost:5000';
-                        const fileUrl = `${backendBaseUrl}${attachment.fileUrl}`;
+                        const fileUrl = attachment.fileUrl; // Files are served from public folder, so relative path works
 
                         return (
                           <div key={index} className="flex items-center gap-2 p-2 border rounded bg-muted/20">
-                            <div className="h-10 w-10 bg-muted flex items-center justify-center rounded overflow-hidden shrink-0">
+                            <div
+                              className="h-10 w-10 bg-muted flex items-center justify-center rounded overflow-hidden shrink-0 cursor-pointer hover:opacity-80"
+                              onClick={() => attachment.fileType.startsWith('image/') && openImagePreview(fileUrl)}
+                            >
                               {attachment.fileType.startsWith('image/') ? (
                                 <img src={fileUrl} alt="" className="h-full w-full object-cover" />
                               ) : (
@@ -938,6 +933,18 @@ export default function CreateQuestionPage() {
                               <p className="text-xs font-medium truncate" title={attachment.fileName}>{attachment.fileName}</p>
                               <p className="text-[10px] text-muted-foreground">{formatFileSize(attachment.fileSize)}</p>
                             </div>
+                            {formData.correctAnswerAttachmentPosition === 'custom' && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                title="Insert placeholder into text"
+                                onClick={() => insertAnswerAttachmentPlaceholder(index)}
+                                className="h-6 text-[10px] px-2 h-6"
+                              >
+                                Insert
+                              </Button>
+                            )}
                             <Button
                               type="button"
                               variant="ghost"
@@ -952,23 +959,7 @@ export default function CreateQuestionPage() {
                       })}
                     </div>
 
-                    {showAnswerAttachmentHelper && correctAnswerAttachments.length > 0 && formData.correctAnswerAttachmentPosition === 'custom' && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-xs border border-blue-100 dark:border-blue-800">
-                        <p className="font-medium mb-2">Click to insert:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {correctAnswerAttachments.map((_, index) => (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => insertAnswerAttachmentPlaceholder(index)}
-                              className="bg-background border px-2 py-1 rounded hover:bg-muted transition"
-                            >
-                              {`{{answerAttachment:${index}}}`}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+
                   </CardContent>
                 </Card>
               )}
@@ -977,6 +968,23 @@ export default function CreateQuestionPage() {
           </div>
         </form>
       )}
+      {/* Image Preview Modal */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-3xl flex flex-col items-center justify-center max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Image Preview</DialogTitle>
+          </DialogHeader>
+          {previewImage && (
+            <div className="relative w-full h-full flex items-center justify-center bg-black/5 rounded-md overflow-hidden p-2">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[70vh] object-contain"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

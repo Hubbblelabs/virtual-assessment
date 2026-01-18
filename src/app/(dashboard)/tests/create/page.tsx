@@ -18,6 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { Search, Plus, Trash2, Wand2, Eye, X, Calendar as CalendarIcon, GripVertical, Filter, Layers, Pencil, Check, ChevronsUpDown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +31,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { format } from "date-fns";
@@ -76,7 +81,11 @@ interface Student {
 interface Group {
   _id: string;
   name: string;
-  students: string[];
+  students: {
+    _id: string;
+    name: string;
+    email: string;
+  }[];
 }
 
 interface Chapter {
@@ -295,8 +304,7 @@ export default function CreateTestPage() {
   const [renamingSectionName, setRenamingSectionName] = useState('');
 
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
-  const [assignmentType, setAssignmentType] = useState<'individual' | 'group'>('group');
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
@@ -465,10 +473,9 @@ export default function CreateTestPage() {
 
       // Handle assignments
       if (test.assignedGroups && test.assignedGroups.length > 0) {
-        setAssignmentType('group');
-        setSelectedGroup(test.assignedGroups[0]._id || test.assignedGroups[0]);
-      } else if (test.assignedTo && test.assignedTo.length > 0) {
-        setAssignmentType('individual');
+        setSelectedGroups(test.assignedGroups.map((g: any) => g._id || g));
+      }
+      if (test.assignedTo && test.assignedTo.length > 0) {
         setSelectedStudents(test.assignedTo.map((s: any) => s._id || s));
       }
 
@@ -635,7 +642,11 @@ export default function CreateTestPage() {
   };
 
   const selectAllStudents = () => {
-    setSelectedStudents(students.map(s => s._id));
+    // Select all students from selected groups
+    const allGroupStudentIds = groups
+      .filter(g => selectedGroups.includes(g._id))
+      .flatMap(g => g.students.map(s => s._id));
+    setSelectedStudents([...new Set(allGroupStudentIds)]);
   };
 
   const deselectAllStudents = () => {
@@ -712,38 +723,50 @@ export default function CreateTestPage() {
     setIsPreviewOpen(true);
   };
 
-  const renderQuestionTextWithAttachments = (text: string, attachments: any[]) => {
-    const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL
-      ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '')
-      : 'http://localhost:5000';
+
+  const openImagePreview = (url: string) => {
+    setPreviewImage(url);
+    setIsPreviewOpenImage(true);
+  };
+  const [isPreviewOpenImage, setIsPreviewOpenImage] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const renderTextWithInlineImages = (text: string, attachments: any[], tokenPrefix: string = 'attachment', wrapperClassName: string = 'whitespace-pre-wrap text-sm leading-relaxed') => {
+    // Split text by placeholder pattern
+    const splitRegex = new RegExp(`({{${tokenPrefix}:\\d+}})`, 'g');
+    const parts = text.split(splitRegex);
 
     return (
-      <div>
-        <p className="whitespace-pre-wrap">{text}</p>
-        {attachments && attachments.length > 0 && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {attachments.map((att, idx) => (
-              <div key={idx} className="border rounded-lg overflow-hidden bg-background">
-                {att.fileType?.startsWith('image/') ? (
-                  <div className="relative aspect-video bg-muted">
-                    <img
-                      src={`${backendBaseUrl}${att.fileUrl}`}
-                      alt={att.fileName}
-                      className="absolute inset-0 w-full h-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="p-3 flex items-center gap-2">
-                    <div className="h-8 w-8 bg-muted rounded flex items-center justify-center">
-                      <span className="text-xs font-bold uppercase">{att.fileType?.split('/')[1] || 'FILE'}</span>
-                    </div>
-                    <span className="text-xs font-medium truncate flex-1">{att.fileName}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+      <div className={wrapperClassName}>
+        {parts.map((part, index) => {
+          const matchRegex = new RegExp(`{{${tokenPrefix}:(\\d+)}}`);
+          const match = part.match(matchRegex);
+          if (match) {
+            const attIndex = parseInt(match[1]);
+            const att = attachments && attachments[attIndex];
+            if (att && att.fileType?.startsWith('image/')) {
+              return (
+                <img
+                  key={index}
+                  src={att.fileUrl}
+                  alt={att.fileName}
+                  className="max-w-full h-auto max-h-[300px] my-2 rounded-md border cursor-pointer hover:opacity-95 transition-opacity block"
+                  onClick={() => openImagePreview(att.fileUrl)}
+                />
+              );
+            }
+            return null;
+          }
+          return <span key={index}>{part}</span>;
+        })}
+      </div>
+    );
+  };
+
+  const renderQuestionTextWithAttachments = (text: string, attachments: any[]) => {
+    return (
+      <div className="space-y-4">
+        {renderTextWithInlineImages(text, attachments, 'attachment')}
       </div>
     );
   };
@@ -760,14 +783,13 @@ export default function CreateTestPage() {
   };
 
   const getAssignedStudents = () => {
-    if (assignmentType === 'individual') return selectedStudents;
-    const group = groups.find(g => g._id === selectedGroup);
-    return group ? group.students : [];
+    // Return individually selected students
+    return selectedStudents;
   };
 
   const getAssignedGroups = () => {
-    if (assignmentType === 'group') return [selectedGroup];
-    return [];
+    // Return selected groups
+    return selectedGroups;
   };
 
   const validateForm = () => {
@@ -852,8 +874,8 @@ export default function CreateTestPage() {
           description: s.description,
           order: s.order
         })),
-        assignedTo: assignmentType === 'individual' ? assignedStudents : [],
-        assignedGroups: assignmentType === 'group' ? assignedGroups : [],
+        assignedTo: assignedStudents,
+        assignedGroups: assignedGroups,
         isPublished: publish,
         showResultsImmediately: formData.showResultsImmediately,
         attempts: parseInt(formData.attempts)
@@ -1082,84 +1104,183 @@ export default function CreateTestPage() {
                 </CardContent>
               </Card>
 
-              {/* Student Assignment */}
+              {/* Student Assignment - Two Column Layout */}
               <Card>
                 <CardHeader>
                   <CardTitle>Student Assignment</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Select groups on the left to automatically select all students from those groups. You can also manually adjust individual student selections on the right.
+                  </p>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <RadioGroup
-                    value={assignmentType}
-                    onValueChange={(value) => setAssignmentType(value as 'individual' | 'group')}
-                    className="flex flex-col sm:flex-row gap-6"
-                  >
-                    <div className="flex items-center space-x-2 border p-4 rounded-lg flex-1 cursor-pointer hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value="group" id="group" />
-                      <Label htmlFor="group" className="cursor-pointer flex-1">Assign to Group</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 border p-4 rounded-lg flex-1 cursor-pointer hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value="individual" id="individual" />
-                      <Label htmlFor="individual" className="cursor-pointer flex-1">Assign to Individual Students</Label>
-                    </div>
-                  </RadioGroup>
-
-                  {assignmentType === 'group' ? (
-                    <div className="space-y-2 max-w-md">
-                      <Label htmlFor="group-select">Select Group</Label>
-                      <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a student group" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {groups.map((group) => (
-                            <SelectItem key={group._id} value={group._id}>
-                              {group.name} ({group.students.length} students)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left Column - Groups */}
+                    <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <Label>Select Students</Label>
+                        <Label className="text-base font-semibold">Groups</Label>
                         <div className="flex gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={selectAllStudents}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Select all groups and all their students
+                              setSelectedGroups(groups.map(g => g._id));
+                              const allStudentIds = groups.flatMap(g => g.students.map(s => s._id));
+                              setSelectedStudents([...new Set(allStudentIds)]);
+                            }}
+                          >
                             Select All
                           </Button>
-                          <Button type="button" variant="outline" size="sm" onClick={deselectAllStudents}>
-                            Deselect All
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedGroups([]);
+                              setSelectedStudents([]);
+                            }}
+                          >
+                            Clear All
                           </Button>
                         </div>
                       </div>
-                      <div className="border rounded-md max-h-60 overflow-y-auto p-2 space-y-1 bg-muted/10">
-                        {students.map((student) => (
-                          <div
-                            key={student._id}
-                            className="flex items-center space-x-2 p-2 hover:bg-muted rounded cursor-pointer"
-                            onClick={() => toggleStudent(student._id)}
-                          >
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <Checkbox
-                                checked={selectedStudents.includes(student._id)}
-                                onCheckedChange={() => toggleStudent(student._id)}
-                              />
+                      <div className="border rounded-lg max-h-72 overflow-y-auto bg-muted/10">
+                        {groups.length > 0 ? (
+                          groups.map((group) => (
+                            <div
+                              key={group._id}
+                              className={`flex items-center space-x-3 p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors ${selectedGroups.includes(group._id) ? 'bg-primary/5' : ''
+                                }`}
+                              onClick={() => {
+                                const groupStudentIds = group.students.map(s => s._id);
+                                if (selectedGroups.includes(group._id)) {
+                                  // Deselect group and remove its students
+                                  setSelectedGroups(selectedGroups.filter(id => id !== group._id));
+                                  setSelectedStudents(selectedStudents.filter(id => !groupStudentIds.includes(id)));
+                                } else {
+                                  // Select group and add all its students
+                                  setSelectedGroups([...selectedGroups, group._id]);
+                                  setSelectedStudents([...new Set([...selectedStudents, ...groupStudentIds])]);
+                                }
+                              }}
+                            >
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedGroups.includes(group._id)}
+                                  onCheckedChange={() => {
+                                    const groupStudentIds = group.students.map(s => s._id);
+                                    if (selectedGroups.includes(group._id)) {
+                                      setSelectedGroups(selectedGroups.filter(id => id !== group._id));
+                                      setSelectedStudents(selectedStudents.filter(id => !groupStudentIds.includes(id)));
+                                    } else {
+                                      setSelectedGroups([...selectedGroups, group._id]);
+                                      setSelectedStudents([...new Set([...selectedStudents, ...groupStudentIds])]);
+                                    }
+                                  }}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{group.name}</p>
+                                <p className="text-xs text-muted-foreground">{group.students.length} students</p>
+                              </div>
                             </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium">{student.name}</p>
-                              <p className="text-xs text-muted-foreground">{student.email}</p>
-                            </div>
-                          </div>
-                        ))}
-                        {students.length === 0 && (
-                          <p className="text-sm text-muted-foreground p-4 text-center">No students found.</p>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground p-4 text-center">
+                            No groups available. You can only see groups you are assigned to.
+                          </p>
                         )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedGroups.length} group{selectedGroups.length !== 1 ? 's' : ''} selected
+                      </p>
+                    </div>
+
+                    {/* Right Column - All Students from All Groups */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <Label className="text-base font-semibold">
+                          Students
+                          <span className="font-normal text-muted-foreground ml-1">
+                            (from your groups)
+                          </span>
+                        </Label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Select all students from all groups
+                              const allStudentIds = groups.flatMap(g => g.students.map(s => s._id));
+                              setSelectedStudents([...new Set(allStudentIds)]);
+                            }}
+                          >
+                            Select All
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedStudents([])}
+                          >
+                            Clear All
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="border rounded-lg max-h-72 overflow-y-auto bg-muted/10">
+                        {(() => {
+                          // Get ALL students from ALL groups (not just selected groups)
+                          const allStudents = groups
+                            .flatMap(g => g.students)
+                            // Remove duplicates (student might be in multiple groups)
+                            .filter((student, index, self) =>
+                              index === self.findIndex(s => s._id === student._id)
+                            );
+
+                          if (groups.length === 0) {
+                            return (
+                              <p className="text-sm text-muted-foreground p-4 text-center">
+                                No groups available.
+                              </p>
+                            );
+                          }
+
+                          if (allStudents.length === 0) {
+                            return (
+                              <p className="text-sm text-muted-foreground p-4 text-center">
+                                No students in your groups.
+                              </p>
+                            );
+                          }
+
+                          return allStudents.map((student) => (
+                            <div
+                              key={student._id}
+                              className={`flex items-center space-x-3 p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors ${selectedStudents.includes(student._id) ? 'bg-primary/5' : ''
+                                }`}
+                              onClick={() => toggleStudent(student._id)}
+                            >
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedStudents.includes(student._id)}
+                                  onCheckedChange={() => toggleStudent(student._id)}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{student.name}</p>
+                                <p className="text-xs text-muted-foreground">{student.email}</p>
+                              </div>
+                            </div>
+                          ));
+                        })()}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {selectedStudents.length} student{selectedStudents.length !== 1 ? 's' : ''} selected
                       </p>
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -1707,7 +1828,7 @@ export default function CreateTestPage() {
 
       {/* Question Preview Sheet */}
       <Sheet open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Question Details</SheetTitle>
           </SheetHeader>
@@ -1731,7 +1852,7 @@ export default function CreateTestPage() {
                 </div>
               </div>
 
-              {previewQuestion.options && (
+              {previewQuestion.options && (previewQuestion.questionType === 'multiple-choice' || previewQuestion.questionType === 'true-false') && (
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-muted-foreground">Options</h4>
                   <div className="space-y-2">
@@ -1750,44 +1871,15 @@ export default function CreateTestPage() {
                 </div>
               )}
 
-              {!previewQuestion.options && previewQuestion.correctAnswer && (
+              {previewQuestion.correctAnswer && (
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-muted-foreground">Correct Answer</h4>
                   <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-900">
-                    <p className="text-green-900 dark:text-green-300 font-medium whitespace-pre-wrap">{previewQuestion.correctAnswer}</p>
-
-                    {previewQuestion.correctAnswerAttachments && previewQuestion.correctAnswerAttachments.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
-                        <p className="text-xs font-medium text-green-800 dark:text-green-400 mb-2">Answer Attachments:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {previewQuestion.correctAnswerAttachments.map((att, idx) => {
-                            const backendBaseUrl = process.env.NEXT_PUBLIC_API_URL
-                              ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '')
-                              : 'http://localhost:5000';
-
-                            return (
-                              <div key={idx} className="border border-green-200 dark:border-green-800 rounded-lg overflow-hidden bg-background/50">
-                                {att.fileType?.startsWith('image/') ? (
-                                  <div className="relative aspect-video bg-muted/50">
-                                    <img
-                                      src={`${backendBaseUrl}${att.fileUrl}`}
-                                      alt={att.fileName}
-                                      className="absolute inset-0 w-full h-full object-contain"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="p-3 flex items-center gap-2">
-                                    <div className="h-8 w-8 bg-muted/50 rounded flex items-center justify-center">
-                                      <span className="text-xs font-bold uppercase">{att.fileType?.split('/')[1] || 'FILE'}</span>
-                                    </div>
-                                    <span className="text-xs font-medium truncate flex-1">{att.fileName}</span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                    {renderTextWithInlineImages(
+                      previewQuestion.correctAnswer,
+                      previewQuestion.correctAnswerAttachments || [],
+                      'answerAttachment',
+                      'text-green-900 dark:text-green-300 font-medium whitespace-pre-wrap'
                     )}
                   </div>
                 </div>
@@ -1816,6 +1908,28 @@ export default function CreateTestPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={isPreviewOpenImage} onOpenChange={setIsPreviewOpenImage}>
+        <DialogContent className="max-w-4xl flex flex-col items-center justify-center max-h-[90vh] overflow-auto border-none bg-transparent shadow-none">
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          {previewImage && (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute -top-4 -right-4 bg-black/50 hover:bg-black/70 text-white rounded-full z-10"
+                onClick={() => setIsPreviewOpenImage(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[85vh] object-contain rounded-md shadow-2xl"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

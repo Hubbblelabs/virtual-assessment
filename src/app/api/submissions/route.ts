@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/submissions - Create submission
+// POST /api/submissions - Create or update submission
 export async function POST(request: NextRequest) {
     try {
         const auth = getAuthFromRequest(request);
@@ -67,7 +67,34 @@ export async function POST(request: NextRequest) {
             return Response.json({ message: 'Test is not published' }, { status: 400 });
         }
 
-        // Check attempt count
+        // Check for existing pending submission (test was started via /start endpoint)
+        const pendingSubmission = await Submission.findOne({
+            test: testId,
+            student: auth.userId,
+            status: 'pending'
+        });
+
+        if (pendingSubmission) {
+            // Update the existing pending submission
+            // Map 'answer' field from frontend to 'answerText' in database
+            const mappedAnswers = (answers || []).map((a: { question: string; answer: string }) => ({
+                question: a.question,
+                answerText: a.answer
+            }));
+            pendingSubmission.answers = mappedAnswers;
+            pendingSubmission.timeTaken = timeTaken;
+            pendingSubmission.status = 'submitted';
+            pendingSubmission.submittedAt = new Date();
+            await pendingSubmission.save();
+
+            const populatedSubmission = await Submission.findById(pendingSubmission._id)
+                .populate('test', 'title')
+                .populate('student', 'name email');
+
+            return Response.json({ message: 'Submission updated successfully', submission: populatedSubmission }, { status: 200 });
+        }
+
+        // No pending submission - check attempt count for new submission
         const existingSubmissions = await Submission.countDocuments({
             test: testId,
             student: auth.userId
@@ -77,10 +104,16 @@ export async function POST(request: NextRequest) {
             return Response.json({ message: 'Maximum attempts reached' }, { status: 400 });
         }
 
+        // Create a new submission (for backwards compatibility)
+        // Map 'answer' field from frontend to 'answerText' in database
+        const mappedNewAnswers = (answers || []).map((a: { question: string; answer: string }) => ({
+            question: a.question,
+            answerText: a.answer
+        }));
         const submission = new Submission({
             test: testId,
             student: auth.userId,
-            answers: answers || [],
+            answers: mappedNewAnswers,
             timeTaken,
             status: 'submitted',
             attemptNumber: existingSubmissions + 1

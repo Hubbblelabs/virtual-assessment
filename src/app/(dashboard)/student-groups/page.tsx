@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { UsersRound, Plus, Edit, Trash2, GraduationCap, BookOpen, Search, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CardGridSkeleton } from "@/components/skeletons";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -261,8 +262,9 @@ export default function StudentGroupsPage() {
     } catch (err: any) {
       if (err.response?.status === 409 && err.response?.data?.dependencies) {
         const dependencies = err.response.data.dependencies;
-        setError(`Cannot delete group: ${dependencies.join('. ')}`);
-        toast.error('Cannot delete group due to dependencies');
+        const dependencyMessage = dependencies.join('. ');
+        setError(`Cannot delete group: ${dependencyMessage}`);
+        toast.error(`Cannot delete group: ${dependencyMessage}`);
       } else {
         const errorMessage = err.response?.data?.message || 'Failed to delete group';
         setError(errorMessage);
@@ -289,11 +291,9 @@ export default function StudentGroupsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="mt-2 text-muted-foreground">Loading groups...</p>
-        </div>
+      <div className="space-y-6">
+        <div className="bg-card p-4 rounded-lg shadow-sm border flex gap-4 items-center h-[72px] animate-pulse" />
+        <CardGridSkeleton count={6} />
       </div>
     );
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,13 @@ import { Moon, Sun, Monitor, User, Bell, Lock } from 'lucide-react';
 
 export default function SettingsPage() {
     const { user } = useAuth();
-    const { setTheme, theme } = useTheme();
+    const { setTheme, theme, systemTheme } = useTheme();
     const [isLoading, setIsLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleProfileUpdate = (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,7 +80,7 @@ export default function SettingsPage() {
                             </CardDescription>
                         </CardHeader>
                         <form onSubmit={handleProfileUpdate}>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 pb-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Name</Label>
                                     <Input id="name" defaultValue={user?.name} placeholder="Your name" />
@@ -92,7 +97,7 @@ export default function SettingsPage() {
                                     <Input id="role" defaultValue={user?.role} disabled className="capitalize" />
                                 </div>
                             </CardContent>
-                            <CardFooter>
+                            <CardFooter className="flex justify-end border-t pt-6 bg-muted/20">
                                 <Button type="submit" disabled={isLoading}>
                                     {isLoading ? "Saving..." : "Save changes"}
                                 </Button>
@@ -110,7 +115,7 @@ export default function SettingsPage() {
                             </CardDescription>
                         </CardHeader>
                         <form onSubmit={handlePasswordUpdate}>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 pb-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="current">Current password</Label>
                                     <Input id="current" type="password" />
@@ -124,7 +129,7 @@ export default function SettingsPage() {
                                     <Input id="confirm" type="password" />
                                 </div>
                             </CardContent>
-                            <CardFooter>
+                            <CardFooter className="flex justify-end border-t pt-6 bg-muted/20">
                                 <Button type="submit" disabled={isLoading}>
                                     {isLoading ? "Saving..." : "Change password"}
                                 </Button>
@@ -141,64 +146,52 @@ export default function SettingsPage() {
                                 Customize the appearance of the application. Automatically switch between day and night themes.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
+                        <CardContent className="space-y-4 pt-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div
-                                    className={`cursor-pointer rounded-md border-2 p-2 hover:border-primary ${theme === 'light' ? 'border-primary' : 'border-transparent'}`}
+                                    className={`cursor-pointer rounded-xl border-2 p-2 transition-all ${theme === 'light' ? 'border-slate-400' : 'border-muted hover:bg-muted/50'}`}
                                     onClick={() => setTheme('light')}
                                 >
-                                    <div className="space-y-2 rounded-sm bg-[#ecedef] p-2">
+                                    <div className="space-y-2 rounded-lg bg-[#ecedef] p-2 pointer-events-none">
                                         <div className="space-y-2 rounded-md bg-white p-2 shadow-sm">
-                                            <div className="h-2 w-[80px] rounded-lg bg-[#ecedef]" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-[#ecedef]" />
+                                            <div className="h-2 w-[80px] rounded-lg bg-[#d0d5dd]" />
+                                            <div className="h-2 w-[100px] rounded-lg bg-[#d0d5dd]" />
                                         </div>
                                         <div className="flex items-center space-x-2 rounded-md bg-white p-2 shadow-sm">
-                                            <div className="h-4 w-4 rounded-full bg-[#ecedef]" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-[#ecedef]" />
-                                        </div>
-                                        <div className="flex items-center space-x-2 rounded-md bg-white p-2 shadow-sm">
-                                            <div className="h-4 w-4 rounded-full bg-[#ecedef]" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-[#ecedef]" />
+                                            <div className="h-4 w-4 rounded-full bg-[#d0d5dd]" />
+                                            <div className="h-2 w-[100px] rounded-lg bg-[#d0d5dd]" />
                                         </div>
                                     </div>
                                     <div className="mt-2 text-center text-sm font-medium">Light</div>
                                 </div>
                                 <div
-                                    className={`cursor-pointer rounded-md border-2 p-2 hover:border-primary ${theme === 'dark' ? 'border-primary' : 'border-transparent'}`}
+                                    className={`cursor-pointer rounded-xl border-2 p-2 transition-all ${theme === 'dark' ? 'border-slate-600 dark:border-slate-500' : 'border-muted hover:bg-muted/50'}`}
                                     onClick={() => setTheme('dark')}
                                 >
-                                    <div className="space-y-2 rounded-sm bg-slate-950 p-2">
-                                        <div className="space-y-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                            <div className="h-2 w-[80px] rounded-lg bg-slate-400" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-slate-400" />
+                                    <div className="space-y-2 rounded-lg bg-[#0f172a] p-2 pointer-events-none">
+                                        <div className="space-y-2 rounded-md bg-[#1e293b] p-2 shadow-sm">
+                                            <div className="h-2 w-[80px] rounded-lg bg-[#475569]" />
+                                            <div className="h-2 w-[100px] rounded-lg bg-[#475569]" />
                                         </div>
-                                        <div className="flex items-center space-x-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                            <div className="h-4 w-4 rounded-full bg-slate-400" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-slate-400" />
-                                        </div>
-                                        <div className="flex items-center space-x-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                            <div className="h-4 w-4 rounded-full bg-slate-400" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-slate-400" />
+                                        <div className="flex items-center space-x-2 rounded-md bg-[#1e293b] p-2 shadow-sm">
+                                            <div className="h-4 w-4 rounded-full bg-[#475569]" />
+                                            <div className="h-2 w-[100px] rounded-lg bg-[#475569]" />
                                         </div>
                                     </div>
                                     <div className="mt-2 text-center text-sm font-medium">Dark</div>
                                 </div>
                                 <div
-                                    className={`cursor-pointer rounded-md border-2 p-2 hover:border-primary ${theme === 'system' ? 'border-primary' : 'border-transparent'}`}
+                                    className={`cursor-pointer rounded-xl border-2 p-2 transition-all ${theme === 'system' ? (mounted && systemTheme === 'dark' ? 'border-slate-600' : 'border-slate-400') : 'border-muted hover:bg-muted/50'}`}
                                     onClick={() => setTheme('system')}
                                 >
-                                    <div className="space-y-2 rounded-sm bg-slate-950 p-2">
-                                        <div className="space-y-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                            <div className="h-2 w-[80px] rounded-lg bg-slate-400" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-slate-400" />
+                                    <div className={`space-y-2 rounded-lg p-2 pointer-events-none ${mounted && systemTheme === 'dark' ? 'bg-[#0f172a]' : 'bg-[#ecedef]'}`}>
+                                        <div className={`space-y-2 rounded-md p-2 shadow-sm ${mounted && systemTheme === 'dark' ? 'bg-[#1e293b]' : 'bg-white'}`}>
+                                            <div className={`h-2 w-[80px] rounded-lg ${mounted && systemTheme === 'dark' ? 'bg-[#475569]' : 'bg-[#d0d5dd]'}`} />
+                                            <div className={`h-2 w-[100px] rounded-lg ${mounted && systemTheme === 'dark' ? 'bg-[#475569]' : 'bg-[#d0d5dd]'}`} />
                                         </div>
-                                        <div className="flex items-center space-x-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                            <div className="h-4 w-4 rounded-full bg-slate-400" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-slate-400" />
-                                        </div>
-                                        <div className="flex items-center space-x-2 rounded-md bg-slate-800 p-2 shadow-sm">
-                                            <div className="h-4 w-4 rounded-full bg-slate-400" />
-                                            <div className="h-2 w-[100px] rounded-lg bg-slate-400" />
+                                        <div className={`flex items-center space-x-2 rounded-md p-2 shadow-sm ${mounted && systemTheme === 'dark' ? 'bg-[#1e293b]' : 'bg-white'}`}>
+                                            <div className={`h-4 w-4 rounded-full ${mounted && systemTheme === 'dark' ? 'bg-[#475569]' : 'bg-[#d0d5dd]'}`} />
+                                            <div className={`h-2 w-[100px] rounded-lg ${mounted && systemTheme === 'dark' ? 'bg-[#475569]' : 'bg-[#d0d5dd]'}`} />
                                         </div>
                                     </div>
                                     <div className="mt-2 text-center text-sm font-medium">System</div>
@@ -216,36 +209,36 @@ export default function SettingsPage() {
                                 Configure how you receive notifications.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between space-x-2">
-                                <Label htmlFor="email-notifs" className="flex flex-col space-y-1">
-                                    <span>Email Notifications</span>
-                                    <span className="font-normal leading-snug text-muted-foreground">
+                        <CardContent className="flex flex-col gap-4 pt-6">
+                            <div className="flex items-center justify-between space-x-4 rounded-lg border p-4 shadow-sm bg-card hover:bg-muted/20 transition-colors">
+                                <Label htmlFor="email-notifs" className="flex flex-col space-y-1 cursor-pointer">
+                                    <span className="font-medium text-base">Email Notifications</span>
+                                    <span className="font-normal text-sm text-muted-foreground">
                                         Receive emails about your account activity and test results.
                                     </span>
                                 </Label>
                                 <Switch id="email-notifs" defaultChecked />
                             </div>
-                            <div className="flex items-center justify-between space-x-2">
-                                <Label htmlFor="test-reminders" className="flex flex-col space-y-1">
-                                    <span>Test Reminders</span>
-                                    <span className="font-normal leading-snug text-muted-foreground">
+                            <div className="flex items-center justify-between space-x-4 rounded-lg border p-4 shadow-sm bg-card hover:bg-muted/20 transition-colors">
+                                <Label htmlFor="test-reminders" className="flex flex-col space-y-1 cursor-pointer">
+                                    <span className="font-medium text-base">Test Reminders</span>
+                                    <span className="font-normal text-sm text-muted-foreground">
                                         Get reminded 1 hour before a scheduled test starts.
                                     </span>
                                 </Label>
                                 <Switch id="test-reminders" defaultChecked />
                             </div>
-                            <div className="flex items-center justify-between space-x-2">
-                                <Label htmlFor="marketing" className="flex flex-col space-y-1">
-                                    <span>Marketing Emails</span>
-                                    <span className="font-normal leading-snug text-muted-foreground">
+                            <div className="flex items-center justify-between space-x-4 rounded-lg border p-4 shadow-sm bg-card hover:bg-muted/20 transition-colors">
+                                <Label htmlFor="marketing" className="flex flex-col space-y-1 cursor-pointer">
+                                    <span className="font-medium text-base">Marketing Emails</span>
+                                    <span className="font-normal text-sm text-muted-foreground">
                                         Receive emails about new features and updates.
                                     </span>
                                 </Label>
                                 <Switch id="marketing" />
                             </div>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="flex justify-end border-t pt-6 bg-muted/20">
                             <Button type="submit" disabled={isLoading} onClick={(e) => {
                                 e.preventDefault();
                                 setIsLoading(true);

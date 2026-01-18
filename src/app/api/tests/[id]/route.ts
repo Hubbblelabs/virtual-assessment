@@ -100,17 +100,19 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             return Response.json({ message: 'Test not found' }, { status: 404 });
         }
 
-        // Check if test has any submissions
-        const submissionsCount = await Submission.countDocuments({ test: id });
-        if (submissionsCount > 0) {
-            return Response.json({
-                message: 'Cannot delete test due to existing submissions',
-                dependencies: [`Has ${submissionsCount} submission(s)`]
-            }, { status: 409 });
-        }
+        // Delete all associated submissions first
+        const deleteResult = await Submission.deleteMany({ test: id });
 
+        // Then delete the test
         await Test.findByIdAndDelete(id);
-        return Response.json({ message: 'Test deleted successfully' });
+
+        const submissionsDeleted = deleteResult.deletedCount || 0;
+        return Response.json({
+            message: submissionsDeleted > 0
+                ? `Test and ${submissionsDeleted} submission(s) deleted successfully`
+                : 'Test deleted successfully',
+            submissionsDeleted
+        });
     } catch (error: unknown) {
         console.error('Delete test error:', error);
         return Response.json({ message: 'Server error' }, { status: 500 });

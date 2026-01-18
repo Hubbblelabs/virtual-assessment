@@ -226,24 +226,35 @@ export default function TestDetailsPage() {
                         {isStudent && (
                             <div className="w-full">
                                 {submission ? (
-                                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full bg-muted/50 p-4 rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-5 w-5 text-green-600" />
-                                            <div>
-                                                <p className="font-medium">You have submitted this test</p>
-                                                <p className="text-xs text-muted-foreground">Status: {submission.status}</p>
+                                    submission.status === 'pending' ? (
+                                        // Submission in progress - show Continue Test
+                                        <Link href={`/tests/${test._id}/take`} className="block w-full">
+                                            <Button size="lg" className="w-full bg-amber-600 hover:bg-amber-700 font-semibold text-lg h-12">
+                                                <PlayCircle className="h-5 w-5 mr-2" />
+                                                Continue Test
+                                            </Button>
+                                        </Link>
+                                    ) : (
+                                        // Submitted - show results or pending
+                                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full bg-muted/50 p-4 rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="h-5 w-5 text-green-600" />
+                                                <div>
+                                                    <p className="font-medium">You have submitted this test</p>
+                                                    <p className="text-xs text-muted-foreground">Status: {submission.status}</p>
+                                                </div>
                                             </div>
+                                            {(test.showResultsImmediately || test.resultsPublished) ? (
+                                                <Link href={`/tests/submissions/evaluate/${submission._id}`}>
+                                                    <Button size="sm">View Results</Button>
+                                                </Link>
+                                            ) : (
+                                                <Button size="sm" variant="secondary" disabled>Results Pending</Button>
+                                            )}
                                         </div>
-                                        {(test.showResultsImmediately || test.resultsPublished) ? (
-                                            <Link href={`/tests/submissions/evaluate/${submission._id}`}>
-                                                <Button size="sm">View Results</Button>
-                                            </Link>
-                                        ) : (
-                                            <Button size="sm" variant="secondary" disabled>Results Pending</Button>
-                                        )}
-                                    </div>
+                                    )
                                 ) : (
-                                    <Link href={`/tests/take/${test._id}`} className="block w-full">
+                                    <Link href={`/tests/${test._id}/take`} className="block w-full">
                                         <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 font-semibold text-lg h-12">
                                             <PlayCircle className="h-5 w-5 mr-2" />
                                             Start Test

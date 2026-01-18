@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import { TableSkeleton } from "@/components/skeletons";
 
 interface Teacher {
   _id: string;
@@ -259,10 +260,19 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="mt-2 text-muted-foreground">Loading users...</p>
+      <div className="space-y-6">
+        {/* Filters */}
+        <div className="bg-card p-4 rounded-lg shadow-sm border flex gap-4 items-center h-[72px] animate-pulse" />
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-card p-4 rounded-lg shadow-sm border h-[100px] animate-pulse" />
+          ))}
+        </div>
+
+        <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
+          <TableSkeleton rows={10} columns={6} />
         </div>
       </div>
     );
@@ -511,6 +521,7 @@ export default function UsersPage() {
               <Select
                 value={formData.role}
                 onValueChange={(value: any) => setFormData({ ...formData, role: value })}
+                disabled={!!editingUser}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Role" />

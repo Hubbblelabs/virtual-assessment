@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { BookOpen, Plus, Trash2, FolderOpen, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SortableChapterItem, SortableTopicItem } from '@/components/SortableSubjectItems';
+import { CardGridSkeleton } from "@/components/skeletons";
 import { Input } from '@/components/ui/input';
 import {
   Sheet,
@@ -327,11 +328,9 @@ export default function SubjectsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="mt-2 text-muted-foreground">Loading subjects...</p>
-        </div>
+      <div className="space-y-6">
+        <div className="bg-card p-4 rounded-lg shadow-sm border flex gap-4 items-center h-[72px] animate-pulse" />
+        <CardGridSkeleton count={6} />
       </div>
     );
   }

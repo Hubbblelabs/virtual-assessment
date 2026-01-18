@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, BookOpen, ChevronRight } from 'lucide-react';
+import { SubjectCardSkeleton } from "@/components/skeletons";
 
 export default function QuestionsPage() {
   const router = useRouter();
@@ -95,9 +96,8 @@ export default function QuestionsPage() {
       {/* Subjects Grid - Card View */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-full bg-card p-8 rounded-lg shadow text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-2 text-sm sm:text-base text-muted-foreground">Loading subjects...</p>
+          <div className="col-span-full">
+            <SubjectCardSkeleton />
           </div>
         ) : filteredSubjects.length === 0 ? (
           <div className="col-span-full bg-card p-6 sm:p-8 rounded-lg shadow text-center text-muted-foreground">

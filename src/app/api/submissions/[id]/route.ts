@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             .populate('evaluatedBy', 'name email')
             .populate({
                 path: 'answers.question',
-                select: 'questionText marks questionType correctAnswer options chapter topic'
+                select: 'questionText marks questionType correctAnswer options chapter topic attachments correctAnswerAttachments'
             });
 
         if (!submission) {

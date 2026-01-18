@@ -19,8 +19,12 @@ export async function GET(request: NextRequest) {
         const basePopulate = [
             { path: 'subject', select: 'name' },
             { path: 'createdBy', select: 'name email' },
-            { path: 'questions.question', populate: { path: 'subject', select: 'name' } }
+            { path: 'questions.question', populate: { path: 'subject', select: 'name' } },
+            { path: 'assignedGroups', select: 'name students' }
         ];
+
+        // For students, we select all needed fields including attempts
+        const studentSelect = 'title subject description duration totalMarks questions sections assignedTo assignedGroups scheduledDate deadline isPublished resultsPublished showResultsImmediately attempts showCorrectAnswers createdAt';
 
         if (auth.role === UserRole.STUDENT) {
             // Get groups the student is in

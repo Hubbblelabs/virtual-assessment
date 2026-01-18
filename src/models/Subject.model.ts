@@ -45,7 +45,6 @@ const SubjectSchema = new Schema<ISubject>(
     }
 );
 
-// Index for faster subject lookups
-SubjectSchema.index({ name: 1 });
+
 
 export default mongoose.models.Subject || mongoose.model<ISubject>('Subject', SubjectSchema);

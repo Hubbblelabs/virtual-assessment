@@ -51,7 +51,6 @@ interface Submission {
 
 export default function EvaluatePage() {
     const params = useParams();
-    const testId = params.testId as string;
     const submissionId = params.submissionId as string;
     const router = useRouter();
     const [submission, setSubmission] = useState<Submission | null>(null);
@@ -124,7 +123,7 @@ export default function EvaluatePage() {
             });
 
             toast.success('Evaluation saved successfully');
-            router.push(`/tests/${testId}/submissions`);
+            router.push(`/tests/${submission.test._id}/submissions`);
         } catch (error) {
             console.error('Failed to save evaluation:', error);
             toast.error('Failed to save evaluation');
@@ -136,7 +135,7 @@ export default function EvaluatePage() {
     const renderRichText = (text: string, attachments?: Attachment[], placeholderPrefix: string = 'attachment') => {
         if (!text) return null;
 
-        // Split by the attachment pattern using a dynamic regex
+        // Split by the attachment pattern
         const regex = new RegExp(`({{${placeholderPrefix}:[0-9]+}})`, 'g');
         const parts = text.split(regex);
 
