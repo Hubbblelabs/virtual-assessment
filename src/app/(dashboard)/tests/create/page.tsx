@@ -587,7 +587,7 @@ export default function CreateTestPage() {
     const targetMarks = parseInt(totalMarks);
 
     // Filter available questions based on common filters first
-    let availableQuestions = [...questions];
+    const availableQuestions = [...questions];
     // (Assuming questions are already filtered by the API call based on commonFilters)
 
     // Sort by difficulty
@@ -595,7 +595,7 @@ export default function CreateTestPage() {
     const mediumQuestions = availableQuestions.filter(q => q.difficultyLevel === 'medium');
     const hardQuestions = availableQuestions.filter(q => q.difficultyLevel === 'hard');
 
-    let selected: SelectedQuestion[] = [];
+    const selected: SelectedQuestion[] = [];
     let currentMarks = 0;
 
     // Helper to add questions

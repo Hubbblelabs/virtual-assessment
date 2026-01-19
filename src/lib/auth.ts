@@ -8,8 +8,13 @@ export interface AuthUser {
 }
 
 export function verifyToken(token: string): AuthUser | null {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        console.error('JWT_SECRET is not defined in environment variables');
+        return null;
+    }
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as AuthUser;
+        const decoded = jwt.verify(token, secret) as AuthUser;
         return decoded;
     } catch {
         return null;

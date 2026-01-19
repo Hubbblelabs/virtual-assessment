@@ -32,14 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if user is logged in
-        const token = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
+        const verifyUser = async () => {
+            const token = sessionStorage.getItem('token');
+            if (token) {
+                try {
+                    const response = await api.get('/auth/me');
+                    if (response.data.user) {
+                        setUser(response.data.user);
+                        // Ensure cookie is synced (session cookie)
+                        document.cookie = `token=${token}; path=/; SameSite=Strict`;
+                    } else {
+                        // If structure is different or user not found/valid
+                        throw new Error('User not found in response');
+                    }
+                } catch (error) {
+                    console.error('Token verification failed:', error);
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
+                    setUser(null);
+                }
+            }
+            setLoading(false);
+        };
 
-        if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
-        }
-        setLoading(false);
+        verifyUser();
     }, []);
 
     const login = useCallback(async (email: string, password: string) => {
@@ -47,8 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const response = await api.post('/auth/login', { email, password });
             const { token, user } = response.data;
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+            sessionStorage.setItem('token', token);
+            sessionStorage.setItem('user', JSON.stringify(user));
+            document.cookie = `token=${token}; path=/; SameSite=Strict`;
             setUser(user);
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -61,8 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const response = await api.post('/auth/register', data);
             const { token, user } = response.data;
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
+            sessionStorage.setItem('token', token);
+            sessionStorage.setItem('user', JSON.stringify(user));
+            document.cookie = `token=${token}; path=/; SameSite=Strict`;
             setUser(user);
         } catch (error: unknown) {
             const err = error as { response?: { data?: { message?: string } } };
@@ -71,8 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const logout = useCallback(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         setUser(null);
     }, []);
 

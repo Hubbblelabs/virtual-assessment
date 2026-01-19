@@ -18,11 +18,7 @@ export async function POST(request: NextRequest) {
         const user = await User.findOne({ email });
 
         // Debug logging
-        console.log('User found:', user ? 'yes' : 'no');
-        if (user) {
-            console.log('User fields:', Object.keys(user.toObject ? user.toObject() : user));
-            console.log('Has password field:', 'password' in (user.toObject ? user.toObject() : user));
-        }
+
 
         if (!user) {
             return Response.json({ message: 'Invalid credentials' }, { status: 401 });
