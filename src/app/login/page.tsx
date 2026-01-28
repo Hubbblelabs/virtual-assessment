@@ -87,6 +87,14 @@ export default function LoginPage() {
                         />
                     </div>
 
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm font-semibold text-blue-900 mb-2">Demo Credentials</p>
+                        <div className="space-y-1 text-xs text-blue-800">
+                            <p><span className="font-semibold">Email:</span> admin@gmail.com</p>
+                            <p><span className="font-semibold">Password:</span> 123</p>
+                        </div>
+                    </div>
+
                     <Button type="submit" className="w-full h-11 text-base" disabled={loading}>
                         {loading ? 'Signing in...' : 'Sign In'}
                     </Button>
